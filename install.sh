@@ -180,7 +180,7 @@ apt-get install -y --no-install-recommends "${packages[@]}"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP_DIR="${BACKUP_ROOT}/${timestamp}"
-mkdir -p -m 0700 "${BACKUP_DIR}"
+install -d -o root -g root -m 0700 "${BACKUP_ROOT}" "${BACKUP_DIR}"
 
 backup_file() {
   local source="$1"
