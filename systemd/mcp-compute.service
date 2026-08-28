@@ -1,0 +1,24 @@
+[Unit]
+Description=Persistent Root Compute MCP
+Documentation=https://modelcontextprotocol.io
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+EnvironmentFile=/etc/mcp-compute.env
+WorkingDirectory=/opt/mcp-compute
+ExecStart=/opt/mcp-compute/.venv/bin/python /opt/mcp-compute/server.py
+Restart=always
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=10
+UMask=0077
+LimitNOFILE=65536
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

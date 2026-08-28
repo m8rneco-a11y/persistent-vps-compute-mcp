@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Validate Bash scripts
+        run: |
+          bash -n install.sh uninstall.sh scripts/*.sh
+          shellcheck install.sh uninstall.sh scripts/*.sh
+
+      - name: Compile Python
+        run: python -m compileall -q server.py tests/test_client.py
+
+      - name: End-to-end MCP test as root
+        env:
+          MCP_TOKEN: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          MCP_HOST: 127.0.0.1
+          MCP_PORT: '8877'
+          MCP_DEFAULT_CWD: /root
+        run: |
+          sudo --preserve-env=MCP_TOKEN,MCP_HOST,MCP_PORT,MCP_DEFAULT_CWD \
+            "$(command -v python)" server.py >mcp-test.log 2>&1 &
+          server_pid=$!
+          trap 'sudo kill "${server_pid}" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:8877/healthz >/dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
+          BASE=http://127.0.0.1:8877 python tests/test_client.py

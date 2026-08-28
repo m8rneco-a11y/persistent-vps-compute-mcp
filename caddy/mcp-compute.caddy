@@ -1,0 +1,22 @@
+__DOMAIN__ {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+
+	handle /healthz {
+		reverse_proxy 127.0.0.1:__PORT__
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:__PORT__ {
+			flush_interval -1
+			transport http {
+				read_timeout 0
+				write_timeout 0
+			}
+		}
+	}
+}
