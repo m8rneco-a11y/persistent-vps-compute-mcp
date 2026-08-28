@@ -230,6 +230,14 @@ def drain_session(session: TerminalSession, wait_seconds: float = 0.0) -> None:
         if not wait_seconds or time.monotonic() >= deadline:
             break
 
+    # A PTY can report EOF just before waitpid() observes the child's exit.
+    # Reap that short race so a completed command is not exposed as running.
+    if session.eof and session.process.poll() is None:
+        try:
+            session.process.wait(timeout=0.20)
+        except subprocess.TimeoutExpired:
+            pass
+
     session.last_active = time.time()
 
 
