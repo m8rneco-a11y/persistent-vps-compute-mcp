@@ -153,7 +153,22 @@ async def main() -> None:
                 },
             )
         )
-        assert "interactive-cwd=/tmp" in interaction["output"], interaction
+        interaction_output = interaction["output"]
+        for _ in range(8):
+            if "interactive-cwd=/tmp" in interaction_output:
+                break
+            interaction = data_of(
+                await client.call_tool(
+                    "terminal",
+                    {
+                        "action": "read",
+                        "session_id": interactive_id,
+                        "wait_seconds": 1,
+                    },
+                )
+            )
+            interaction_output += interaction["output"]
+        assert "interactive-cwd=/tmp" in interaction_output, interaction_output
         closed = data_of(
             await client.call_tool(
                 "terminal",
